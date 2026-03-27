@@ -79,6 +79,13 @@ async function getNewSubscriptionsThisMonth() {
   return count;
 }
 
+async function getCancelledThisMonth() {
+  const now   = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const { count } = await rc(`subscriptions/count?status=cancelled&cancelled_at_min=${start}`);
+  return count;
+}
+
 // ── Klaviyo: profile counts ───────────────────────────────────────────────────
 
 // Both the newsletter list and engaged segment are Klaviyo segments
@@ -190,7 +197,7 @@ async function updateRow(row, colIdx, value) {
   });
 }
 
-async function updateNotion(activeSubscriptions, newThisMonth, listCount, segmentCount, openRate) {
+async function updateNotion(activeSubscriptions, newThisMonth, churnThisMonth, listCount, segmentCount, openRate) {
   const tableId = await findScoreboardTableId(PAGE_ID);
   const rows    = await getBlocks(tableId);
   if (!rows.length) throw new Error('Scoreboard table has no rows');
@@ -204,6 +211,7 @@ async function updateNotion(activeSubscriptions, newThisMonth, listCount, segmen
   const updates = {
     'Monthly Subscribers':    activeSubscriptions,
     'New This Month':         newThisMonth,
+    'Churn This Month':       churnThisMonth,
     'Email List Size':        listCount,
     'Engaged Email Segment':  segmentCount,
     'Open Rate':              openRate,
@@ -233,12 +241,14 @@ async function main() {
   if (missing.length) throw new Error(`Missing environment variables: ${missing.join(', ')}`);
 
   console.log('Fetching Recharge data…');
-  const [activeSubscriptions, newThisMonth] = await Promise.all([
+  const [activeSubscriptions, newThisMonth, churnThisMonth] = await Promise.all([
     getActiveSubscriptionCount(),
     getNewSubscriptionsThisMonth(),
+    getCancelledThisMonth(),
   ]);
   console.log(`  Monthly Subscribers:   ${activeSubscriptions.toLocaleString()}`);
   console.log(`  New This Month:        ${newThisMonth.toLocaleString()}`);
+  console.log(`  Churn This Month:      ${churnThisMonth.toLocaleString()}`);
 
   console.log('Fetching Klaviyo data…');
   const [listCount, segmentCount, openRate] = await Promise.all([
@@ -251,10 +261,15 @@ async function main() {
   console.log(`  30-Day Open Rate:      ${openRate}`);
 
   console.log('\nUpdating Notion scoreboard…');
-  await updateNotion(activeSubscriptions, newThisMonth, listCount, segmentCount, openRate);
+  await updateNotion(activeSubscriptions, newThisMonth, churnThisMonth, listCount, segmentCount, openRate);
 
   console.log('\nDone.');
 }
+
+main().catch(err => {
+  console.error(err.message);
+  process.exit(1);
+});
 
 main().catch(err => {
   console.error(err.message);
