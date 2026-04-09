@@ -2,9 +2,6 @@ name: Klaviyo → Notion Sync
 
 on:
   schedule:
-    # Every Thursday at 14:00 UTC = 08:00 CDT (UTC-6)
-    # During CST (Nov–Mar, UTC-5) this fires at 09:00 CT instead.
-    # Adjust to '0 13 * * 4' for strict 08:00 CST during winter months.
     - cron: '0 14 * * 4'
   workflow_dispatch:
 
@@ -19,6 +16,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Check secret
+        run: |
+          if [ -z "$RECHARGE_API_KEY" ]; then
+            echo "RECHARGE_API_KEY is EMPTY or not set"
+          else
+            echo "RECHARGE_API_KEY is SET, length=${#RECHARGE_API_KEY}"
+          fi
+        env:
+          RECHARGE_API_KEY: ${{ secrets.RECHARGE_API_KEY }}
 
       - name: Run sync
         env:
