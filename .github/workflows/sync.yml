@@ -17,16 +17,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Check secret
-        run: |
-          if [ -z "$RECHARGE_API_KEY" ]; then
-            echo "RECHARGE_API_KEY is EMPTY or not set"
-          else
-            echo "RECHARGE_API_KEY is SET, length=${#RECHARGE_API_KEY}"
-          fi
-        env:
-          RECHARGE_API_KEY: ${{ secrets.RECHARGE_API_KEY }}
-
       - name: Run sync
         env:
           KLAVIYO_PRIVATE_KEY: ${{ secrets.KLAVIYO_PRIVATE_KEY }}
@@ -36,3 +26,5 @@ jobs:
           KLAVIYO_SEGMENT_ID:  ${{ secrets.KLAVIYO_SEGMENT_ID }}
           RECHARGE_API_KEY:    ${{ secrets.RECHARGE_API_KEY }}
         run: node sync.js
+
+
