@@ -2,6 +2,9 @@ name: Klaviyo → Notion Sync
 
 on:
   schedule:
+    # Every Thursday at 14:00 UTC = 08:00 CDT (UTC-6)
+    # During CST (Nov–Mar, UTC-5) this fires at 09:00 CT instead.
+    # Adjust to '0 13 * * 4' for strict 08:00 CST during winter months.
     - cron: '0 14 * * 4'
   workflow_dispatch:
 
@@ -9,10 +12,14 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
+
       - name: Run sync
         env:
           KLAVIYO_PRIVATE_KEY: ${{ secrets.KLAVIYO_PRIVATE_KEY }}
@@ -20,4 +27,5 @@ jobs:
           NOTION_PAGE_ID:      ${{ secrets.NOTION_PAGE_ID }}
           KLAVIYO_LIST_ID:     ${{ secrets.KLAVIYO_LIST_ID }}
           KLAVIYO_SEGMENT_ID:  ${{ secrets.KLAVIYO_SEGMENT_ID }}
+          RECHARGE_API_KEY:    ${{ secrets.RECHARGE_API_KEY }}
         run: node sync.js
